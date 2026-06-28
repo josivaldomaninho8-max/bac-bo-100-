@@ -8,71 +8,33 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
-from dotenv import load_dotenv
+from twilio.rest import Client
 from flask import Flask, request
 import threading
-import sys
 
-# Carregar variáveis de ambiente do arquivo .env
-load_dotenv()
+# --- CONFIGURAÇÕES DIRETAS (SEM .env) ---
+WHATSAPP_FROM = "+14155238886"
+WHATSAPP_TO = "+244922105228"
+TWILIO_SID = "USdea1419139c0986ee31277c4dd61fd03"
+TWILIO_AUTH_TOKEN = "7d3e410740ae00fcd23e060e246e8eae"
+USERNAME = "925959236"
+PASSWORD = "Senhas.925"
 
-# --- CONFIGURAÇÕES COM FALLBACK ---
-WHATSAPP_FROM = os.getenv("+14155238886", "")
-WHATSAPP_TO = os.getenv("+244922105228", "")
-TWILIO_SID = os.getenv("ACc6d1f7856b4388d2be984b9976392a9c", "")
-TWILIO_AUTH_TOKEN = os.getenv("7d3e410740ae00fcd23e060e246e8eae", "")
-USERNAME = os.getenv("ELEPHANT_USERNAME", "925959236")
-PASSWORD = os.getenv("ELEPHANT_PASSWORD", "Senhas.925")
-
-# Verificar se as credenciais existem
-if not all([TWILIO_SID, TWILIO_AUTH_TOKEN, WHATSAPP_FROM, WHATSAPP_TO]):
-    print("⚠️ AVISO: Variáveis do Twilio não configuradas!")
-    print("📝 Configure no Render as variáveis de ambiente:")
-    print("   - TWILIO_SID")
-    print("   - TWILIO_AUTH_TOKEN")
-    print("   - WHATSAPP_FROM (ex: +14155238886)")
-    print("   - WHATSAPP_TO (ex: +244900000000)")
-    print("\n💡 O bot continuará rodando com logs, mas NÃO enviará WhatsApp.")
-    print("   Use o Render Dashboard -> Environment para configurar.\n")
-    
-    # Criar cliente Twilio dummy para não quebrar
-    class DummyTwilioClient:
-        def messages(self):
-            return self
-        def create(self, **kwargs):
-            print(f"📱 [SIMULAÇÃO] Mensagem enviada para {kwargs.get('to')}: {kwargs.get('body')}")
-            return None
-    
-    twilio_client = DummyTwilioClient()
-else:
-    try:
-        from twilio.rest import Client
-        twilio_client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
-        print("✅ Twilio configurado com sucesso!")
-    except Exception as e:
-        print(f"❌ Erro ao configurar Twilio: {e}")
-        # Fallback para modo simulação
-        class DummyTwilioClient:
-            def messages(self):
-                return self
-            def create(self, **kwargs):
-                print(f"📱 [SIMULAÇÃO] Mensagem enviada para {kwargs.get('to')}: {kwargs.get('body')}")
-                return None
-        twilio_client = DummyTwilioClient()
+# --- SETUP TWILIO WHATSAPP ---
+twilio_client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
 
 def enviar_whatsapp(mensagem):
-    """Envia mensagem via WhatsApp usando Twilio (ou simula se não configurado)"""
+    """Envia mensagem via WhatsApp usando Twilio"""
     try:
         message = twilio_client.messages.create(
-            from_=f'whatsapp:{WHATSAPP_FROM}' if WHATSAPP_FROM else None,
+            from_=f'whatsapp:{WHATSAPP_FROM}',
             body=mensagem,
-            to=f'whatsapp:{WHATSAPP_TO}' if WHATSAPP_TO else None
+            to=f'whatsapp:{WHATSAPP_TO}'
         )
-        print(f"✅ Mensagem enviada: {mensagem[:50]}...")
-        return message.sid if message else None
+        print(f"✅ Mensagem enviada para {WHATSAPP_TO}")
+        return message.sid
     except Exception as e:
         print(f"❌ Erro ao enviar: {e}")
-        print(f"📝 Mensagem que seria enviada: {mensagem[:100]}...")
         return None
 
 # --- SETUP SELENIUM ---
@@ -85,11 +47,9 @@ def iniciar_driver():
     options.add_argument('--window-size=1920,1080')
     
     try:
-        # Tentar usar webdriver_manager
         service = Service(ChromeDriverManager().install())
         driver = webdriver.Chrome(service=service, options=options)
     except:
-        # Fallback para ChromeDriver no PATH
         driver = webdriver.Chrome(options=options)
     
     return driver
@@ -97,6 +57,7 @@ def iniciar_driver():
 # --- LOGIN NA ELEPHANTEBET ---
 def login_elephantebet(driver):
     try:
+        print("🔑 Tentando login na ElephantBet...")
         driver.get("https://elephantbet.co.ao")
         time.sleep(5)
         
@@ -113,7 +74,7 @@ def login_elephantebet(driver):
         password_field.send_keys(PASSWORD)
         password_field.send_keys(Keys.ENTER)
         time.sleep(5)
-        print("✅ Login realizado com sucesso")
+        print("✅ Login realizado com sucesso!")
         return True
     except Exception as e:
         print(f"❌ Erro no login: {e}")
@@ -122,11 +83,11 @@ def login_elephantebet(driver):
 # --- COLETAR RESULTADOS DO BACBO ---
 def coletar_resultados(driver):
     try:
+        print("📊 Coletando resultados do Bac Bo...")
         driver.get("https://elephantbet.co.ao/casino")
         time.sleep(10)
         
         resultados = []
-        # Aguardar elementos carregarem
         elementos = driver.find_elements(By.CSS_SELECTOR, ".history-result-circle")
         
         for e in elementos[:20]:
@@ -152,7 +113,7 @@ def prever_sinal(resultados):
         if r in count:
             count[r] += 1
     
-    # Lógica de previsão
+    # Lógica de previsão melhorada
     if count["B"] >= 3:
         return "🔵 AZUL (B) - Alta probabilidade"
     elif count["P"] >= 3:
@@ -186,9 +147,10 @@ def enviar_sinal():
 📈 Últimos resultados: {' → '.join(resultados[:10])}
 
 ⏰ {time.strftime('%H:%M:%S')}
-🏆 ElephantBet.ao"""
-            
-            # Enviar via WhatsApp (ou simular)
+🏆 ElephantBet.ao
+🤖 Bot by Jardel Campos"""
+
+            # Enviar via WhatsApp
             enviar_whatsapp(mensagem)
             print(f"📤 Sinal enviado: {sinal}")
         else:
@@ -217,7 +179,7 @@ def health():
 def status():
     return {
         "status": "running",
-        "twilio_configured": bool(TWILIO_SID and TWILIO_AUTH_TOKEN),
+        "twilio_configured": True,
         "whatsapp_to": WHATSAPP_TO,
         "username": USERNAME
     }
@@ -230,7 +192,6 @@ def trigger():
 
 # --- INICIAR AGENDAMENTO ---
 def iniciar_bot():
-    # Executar uma vez ao iniciar
     print("🚀 Executando primeira análise...")
     enviar_sinal()
     
@@ -238,8 +199,8 @@ def iniciar_bot():
     schedule.every(5).minutes.do(enviar_sinal)
     
     print("🚀 Bot de sinais Bac Bo iniciado!")
-    print(f"📱 Enviando para: {WHATSAPP_TO if WHATSAPP_TO else 'NÃO CONFIGURADO'}")
-    print(f"🔑 Twilio: {'✅ Configurado' if TWILIO_SID else '❌ Não configurado'}")
+    print(f"📱 Enviando para: {WHATSAPP_TO}")
+    print(f"🔑 Twilio: ✅ Configurado")
     
     while True:
         schedule.run_pending()
