@@ -1,0 +1,6 @@
+selenium==4.20.0
+schedule==1.2.0
+twilio==8.10.0
+python-dotenv==1.0.1
+webdriver-manager==4.0.1
+flask==3.0.3
