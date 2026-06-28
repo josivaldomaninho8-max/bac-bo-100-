@@ -1,0 +1,19 @@
+services:
+  - type: web
+    name: bacbo-bot
+    env: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: TWILIO_SID
+        sync: false
+      - key: TWILIO_AUTH_TOKEN
+        sync: false
+      - key: WHATSAPP_FROM
+        sync: false
+      - key: WHATSAPP_TO
+        sync: false
+      - key: ELEPHANT_USERNAME
+        sync: false
+      - key: ELEPHANT_PASSWORD
+        sync: false
