@@ -1,6 +1,6 @@
 FROM python:3.10-slim
 
-# Instalar dependências do Chrome (método atualizado sem apt-key)
+# Instalar dependências do Chrome
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
