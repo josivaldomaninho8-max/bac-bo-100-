@@ -17,12 +17,12 @@ import threading
 load_dotenv()
 
 # --- CONFIGURAÇÕES ---
-WHATSAPP_FROM = os.getenv("WHATSAPP_FROM")
-WHATSAPP_TO = os.getenv("WHATSAPP_TO")
-TWILIO_SID = os.getenv("TWILIO_SID")
-TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN")
-USERNAME = os.getenv("ELEPHANT_USERNAME")
-PASSWORD = os.getenv("ELEPHANT_PASSWORD")
+WHATSAPP_FROM = os.getenv("+14155238886")
+WHATSAPP_TO = os.getenv("+244922105228")
+TWILIO_SID = os.getenv("ACc6d1f7856b4388d2be984b9976392a9c")
+TWILIO_AUTH_TOKEN = os.getenv("7d3e410740ae00fcd23e060e246e8eae")
+USERNAME = os.getenv("925959236")
+PASSWORD = os.getenv("Senhas.925")
 
 # --- SETUP TWILIO WHATSAPP ---
 twilio_client = Client(TWILIO_SID, TWILIO_AUTH_TOKEN)
